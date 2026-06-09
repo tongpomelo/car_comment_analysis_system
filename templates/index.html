@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>汽车口碑分析系统 · 懂车智析</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- ECharts -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background: #f5f7fc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar {
+            background: #ffffff;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #eef2f6;
+        }
+
+        .logo {
+            display: flex; align-items: center; gap: 10px;
+            font-weight: 700; font-size: 1.5rem; color: #1e293b;
+        }
+
+        .logo i { color: #3b82f6; font-size: 1.8rem; }
+
+        .nav-links { display: flex; gap: 28px; }
+
+        .nav-links a {
+            text-decoration: none; color: #475569;
+            font-weight: 500; transition: color 0.2s; font-size: 1rem;
+        }
+
+        .nav-links a.active, .nav-links a:hover { color: #2563eb; }
+
+        .user-badge {
+            background: #f1f5f9; padding: 6px 14px;
+            border-radius: 30px; color: #1e293b;
+            font-size: 0.9rem; display: flex; align-items: center; gap: 8px;
+        }
+
+        .container {
+            max-width: 1280px; margin: 0 auto; padding: 30px 24px; flex: 1; width: 100%;
+        }
+
+        .search-section {
+            background: #ffffff; border-radius: 28px;
+            padding: 32px 36px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+            border: 1px solid #e9eef4; margin-bottom: 30px;
+        }
+
+        .search-header { margin-bottom: 24px; }
+        .search-header h1 { font-size: 2rem; font-weight: 700; color: #0f172a; }
+        .search-header p { color: #64748b; margin-top: 6px; font-size: 1rem; }
+
+        .search-box {
+            display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+        }
+
+        .input-group { flex: 1; min-width: 260px; }
+        .input-group label { display: block; font-size: 0.85rem; font-weight: 500; color: #334155; margin-bottom: 6px; }
+
+        .input-wrapper {
+            display: flex; align-items: center;
+            background: #f8fafc; border: 1.5px solid #e2e8f0;
+            border-radius: 18px; padding: 4px 16px; transition: all 0.15s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #3b82f6; background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        .input-wrapper i { color: #94a3b8; font-size: 1.2rem; margin-right: 10px; }
+        .input-wrapper input { width: 100%; padding: 14px 0; border: none; background: transparent; font-size: 1.1rem; outline: none; color: #0f172a; }
+        .input-wrapper input::placeholder { color: #a0afbe; font-weight: 300; }
+
+        .search-btn {
+            min-width: 140px; background: #2563eb; color: white;
+            border: none; border-radius: 40px; padding: 14px 28px;
+            font-weight: 600; font-size: 1rem; cursor: pointer;
+            transition: all 0.2s; box-shadow: 0 6px 14px rgba(37,99,235,0.2);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            border: 1px solid #2563eb;
+        }
+
+        .search-btn:hover { background: #1d4ed8; transform: translateY(-2px); box-shadow: 0 12px 20px -8px rgba(37,99,235,0.3); }
+
+        .result-panel { margin-top: 30px; }
+
+        .info-message {
+            background: #f1f5fe; border-radius: 18px; padding: 20px 24px;
+            color: #1e3a8a; display: flex; align-items: center; gap: 14px;
+            border-left: 6px solid #2563eb;
+        }
+
+        .stats-cards {
+            display: flex; gap: 24px; margin: 24px 0 18px; flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: #ffffff; border-radius: 24px; padding: 24px 28px;
+            flex: 1; min-width: 160px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.02); border: 1px solid #eef2f6;
+        }
+
+        .stat-label {
+            color: #64748b; font-size: 0.9rem; text-transform: uppercase;
+            letter-spacing: 0.5px; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        .stat-number { font-size: 2.5rem; font-weight: 800; color: #0f172a; line-height: 1.2; }
+        .stat-detail { color: #3b82f6; font-size: 0.95rem; margin-top: 8px; font-weight: 500; }
+
+        .action-bar {
+            display: flex; gap: 16px; margin: 20px 0 30px; flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 14px 28px; border-radius: 40px; font-weight: 600;
+            font-size: 1rem; border: none; cursor: pointer; transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 10px;
+            background: white; border: 1.5px solid #e2e8f0; color: #1e293b;
+        }
+
+        .btn-primary { background: #0f172a; border-color: #0f172a; color: white; box-shadow: 0 6px 12px rgba(15,23,42,0.1); }
+        .btn-primary:hover { background: #1e293b; transform: translateY(-2px); }
+
+        .btn-success { background: #059669; border-color: #059669; color: white; box-shadow: 0 6px 12px rgba(5,150,105,0.15); }
+        .btn-outline-blue { border-color: #bdd3ff; background: #f5f9ff; color: #2563eb; }
+
+        .btn i { font-size: 1.1rem; }
+
+        .progress-bar-wrapper { background: #e2e8f0; border-radius: 20px; height: 10px; margin: 15px 0; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: #2563eb; width: 0%; transition: width 0.3s ease; border-radius: 20px; }
+
+        .analysis-interface {
+            background: #ffffff; border-radius: 28px; padding: 28px 30px;
+            margin-top: 20px; box-shadow: 0 12px 30px -8px rgba(0,0,0,0.08);
+        }
+
+        .analysis-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;
+        }
+
+        .back-link { color: #2563eb; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+        .chart-container { width: 100%; height: 400px; margin-bottom: 30px; }
+        .chart-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 20px; }
+        .chart-card { background: #fafcff; border-radius: 20px; padding: 20px; border: 1px solid #e9eef4; }
+        .chart-title { font-weight: 600; margin-bottom: 18px; color: #334155; }
+
+        .hidden { display: none !important; }
+        .flex-row { display: flex; align-items: center; gap: 12px; }
+
+        .loader {
+            width: 24px; height: 24px;
+            border: 3px solid rgba(59,130,246,0.2); border-radius: 50%;
+            border-top-color: #2563eb; animation: spin 0.8s linear infinite; display: inline-block;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .toast-msg {
+            background: #1e293b; color: white; padding: 12px 24px; border-radius: 60px;
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; box-shadow: 0 20px 30px -5px rgba(0,0,0,0.2);
+            opacity: 0; transition: opacity 0.2s;
+        }
+        .toast-msg.show { opacity: 1; }
+
+        footer { text-align: center; padding: 20px; color: #94a3b8; font-size: 0.85rem; border-top: 1px solid #e2e8f0; margin-top: 40px; }
+
+        button:disabled { opacity: 0.6; cursor: not-allowed; background: #cbd5e1 !important; border-color: #cbd5e1 !important; box-shadow: none; transform: none; }
+        .btn-primary:disabled { background: #94a3b8 !important; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="logo">
+        <i class="fas fa-car-side"></i>
+        <span>懂车智析</span>
+    </div>
+    <div class="nav-links">
+        <a href="#" class="active" id="navSearchTab"><i class="fas fa-search"></i> 搜索口碑</a>
+        <a href="#" id="navAnalysisTab"><i class="fas fa-chart-pie"></i> 智能分析</a>
+    </div>
+    <div class="user-badge">
+        <i class="fas fa-user-circle"></i> 体验用户
+    </div>
+</nav>
+
+<div class="container">
+    <!-- 搜索界面 -->
+    <div id="searchInterface">
+        <div class="search-section">
+            <div class="search-header">
+                <h1>挖掘真实车主声音</h1>
+                <p>输入汽车之家车型ID，一键爬取口碑并智能分析</p>
+            </div>
+            <div class="search-box">
+                <div class="input-group">
+                    <label><i class="far fa-keyboard"></i> 车型ID</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-hashtag"></i>
+                        <input type="text" id="carIdInput" placeholder="例如: 8171" value="8171">
+                    </div>
+                </div>
+                <div class="input-group" style="max-width:200px;">
+                    <label><i class="fas fa-globe"></i> 数据来源</label>
+                    <div style="display:flex; gap:8px; padding-top:8px;">
+                        <label style="display:flex; align-items:center; gap:4px; cursor:pointer; font-size:0.9rem;">
+                            <input type="radio" name="source" value="autohome" checked> 汽车之家
+                        </label>
+                        <label style="display:flex; align-items:center; gap:4px; cursor:pointer; font-size:0.9rem;">
+                            <input type="radio" name="source" value="dongchedi"> 懂车帝
+                        </label>
+                    </div>
+                </div>
+                <button class="search-btn" id="searchBtn"><i class="fas fa-magnifying-glass"></i> 检索口碑</button>
+            </div>
+        </div>
+
+        <div id="resultArea" class="result-panel">
+            <div class="info-message">
+                <i class="fas fa-lightbulb" style="font-size: 1.8rem;"></i>
+                <div>
+                    <strong>开始使用</strong><br>
+                    输入汽车之家车型ID并搜索，即可查看该车型的口碑数量并开始爬取与分析。
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分析界面（包含可视化报告） -->
+    <div id="analysisInterface" class="analysis-interface hidden">
+        <div class="analysis-header">
+            <div class="flex-row">
+                <div class="back-link" id="backToSearchBtn">
+                    <i class="fas fa-arrow-left"></i> 返回搜索
+                </div>
+                <h2 style="margin-left: 20px;"><span id="analysisCarName">--</span> · 口碑洞察报告</h2>
+            </div>
+            <div>
+                <span class="badge" style="background: #dbeafe;"><i class="far fa-calendar"></i> 基于 <span id="reviewCountUsed">0</span> 条口碑生成</span>
+            </div>
+        </div>
+
+        <div style="margin: 10px 0 25px; color: #475569;">
+            <i class="fas fa-download" style="margin-right: 8px;"></i> 数据已就绪，以下为AI提炼的核心洞察
+        </div>
+
+        <!-- 综合统计卡片 -->
+        <div class="stats-cards" style="margin-top: 0;">
+            <div class="stat-card">
+                <div class="stat-label"><i class="far fa-smile"></i> 综合评分</div>
+                <div class="stat-number" id="summaryScore">--</div>
+                <div class="stat-detail" id="summaryScoreDetail">等待分析</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label"><i class="fas fa-thumbs-up"></i> 最满意项</div>
+                <div class="stat-number" id="summarySatis">--</div>
+                <div class="stat-detail" id="summarySatisDetail">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label"><i class="fas fa-exclamation-triangle"></i> 最不满意</div>
+                <div class="stat-number" id="summaryDiss">--</div>
+                <div class="stat-detail" id="summaryDissDetail">--</div>
+            </div>
+        </div>
+
+        <!-- AI 摘要 -->
+        <div class="insight-text" style="background: #f8fafc; border-radius: 18px; padding: 24px;">
+            <h4 style="margin-bottom: 16px;"><i class="fas fa-robot" style="color:#2563eb;"></i> AI 摘要</h4>
+            <p id="aiSummaryText">等待分析完成...</p>
+        </div>
+
+        <!-- 操作按钮区 -->
+        <div style="margin-top: 28px; display: flex; gap: 16px; flex-wrap: wrap;">
+            <button class="btn btn-outline-blue" id="exportReportBtn" disabled>
+                <i class="fas fa-file-excel"></i> 导出完整报告 (Excel)
+            </button>
+            <button class="btn btn-outline-blue" id="visualizeReportBtn" disabled>
+                <i class="fas fa-chart-bar"></i> 生成可视化报告
+            </button>
+            <button class="btn btn-outline-blue" id="downloadRawDataBtn" style="display:none;">
+                <i class="fas fa-download"></i> 下载原始口碑数据
+            </button>
+        </div>
+
+        <!-- 可视化报告区域 -->
+        <div id="visualizationArea" class="hidden" style="margin-top: 30px;">
+            <h3 style="margin-bottom: 24px;"><i class="fas fa-chart-pie" style="color:#2563eb;"></i> 商品企划洞察报告</h3>
+
+            <!-- 1. 评分雷达 + 领域矩阵（并排） -->
+            <div style="display:grid; grid-template-columns:1fr 1.2fr; gap:20px; margin-bottom:20px;">
+                <div class="chart-card">
+                    <div class="chart-title">各维度综合评分</div>
+                    <div class="chart-container" id="scoreRadarChart"></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">领域优劣势矩阵</div>
+                    <div class="chart-container" id="domainMatrixChart"></div>
+                </div>
+            </div>
+
+            <!-- 2. 改进优先级 -->
+            <div class="chart-card" style="margin-bottom:20px;">
+                <div class="chart-title">改进优先级排序（不满意 × 改进建议）</div>
+                <div class="chart-container" id="improvementPriorityChart"></div>
+            </div>
+
+            <!-- 3. 竞品对战 + 场景关注（并排） -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+                <div class="chart-card">
+                    <div class="chart-title">竞品对战分析</div>
+                    <div id="competitiveInsightDiv" style="max-height:400px; overflow-y:auto;"></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">场景-关注点关联</div>
+                    <div id="scenarioConcernDiv" style="max-height:400px; overflow-y:auto;"></div>
+                </div>
+            </div>
+
+            <!-- 4. 具体口碑点（好评/抱怨并排） -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+                <div class="chart-card">
+                    <div class="chart-title">用户好评 Top 12</div>
+                    <div class="chart-container" id="topPraiseChart"></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">用户抱怨 Top 12</div>
+                    <div class="chart-container" id="topComplaintChart"></div>
+                </div>
+            </div>
+
+            <!-- 5. 基础统计饼图 -->
+            <details style="margin-bottom:20px;">
+                <summary style="cursor:pointer; font-weight:600; color:#475569; padding:8px 0;">
+                    <i class="fas fa-chart-pie"></i> 基础统计图表（展开查看）
+                </summary>
+                <div class="chart-grid" style="margin-top:12px;">
+                    <div class="chart-card">
+                        <div class="chart-title">使用场景分布</div>
+                        <div class="chart-container" id="scenesChart"></div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title">满意领域 Top 15</div>
+                        <div class="chart-container" id="satisChart"></div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title">不满意领域 Top 15</div>
+                        <div class="chart-container" id="disChart"></div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title">改进建议领域 Top 15</div>
+                        <div class="chart-container" id="suggestChart"></div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title">对比车型 Top 15</div>
+                        <div class="chart-container" id="compareChart"></div>
+                    </div>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <footer>
+        <i class="far fa-copyright"></i> 懂车智析 · 本地版 | 基于大模型的口碑分析系统
+    </footer>
+</div>
+
+<div id="liveToast" class="toast-msg">提示</div>
+
+<script>
+    (function() {
+        const searchInterface = document.getElementById('searchInterface');
+        const analysisInterface = document.getElementById('analysisInterface');
+        const resultArea = document.getElementById('resultArea');
+        const carIdInput = document.getElementById('carIdInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const navSearchTab = document.getElementById('navSearchTab');
+        const navAnalysisTab = document.getElementById('navAnalysisTab');
+        const backToSearchBtn = document.getElementById('backToSearchBtn');
+        const analysisCarName = document.getElementById('analysisCarName');
+        const reviewCountUsed = document.getElementById('reviewCountUsed');
+        const exportReportBtn = document.getElementById('exportReportBtn');
+        const visualizeReportBtn = document.getElementById('visualizeReportBtn');
+        const downloadRawDataBtn = document.getElementById('downloadRawDataBtn');
+
+        // 摘要元素
+        const summaryScore = document.getElementById('summaryScore');
+        const summarySatis = document.getElementById('summarySatis');
+        const summaryDiss = document.getElementById('summaryDiss');
+        const aiSummaryText = document.getElementById('aiSummaryText');
+
+        let searchResultData = null;
+        let scrapedFile = null;
+        let analysisFile = null;
+        let analysisCompleted = false;
+        let currentSource = 'autohome';
+
+        function getSelectedSource() {
+            const radios = document.getElementsByName('source');
+            for (let r of radios) {
+                if (r.checked) return r.value;
+            }
+            return 'autohome';
+        }
+
+        function api(path) {
+            return currentSource === 'dongchedi' ? `/api/dongchedi/${path}` : `/api/${path}`;
+        }
+
+        function showToast(msg, duration = 2500) {
+            const toast = document.getElementById('liveToast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), duration);
+        }
+
+        function showSearchView() {
+            searchInterface.classList.remove('hidden');
+            analysisInterface.classList.add('hidden');
+            navSearchTab.classList.add('active');
+            navAnalysisTab.classList.remove('active');
+        }
+
+        function showAnalysisView() {
+            if (!analysisCompleted && !scrapedFile) {
+                showToast('请先完成爬取和分析', 2500);
+                return;
+            }
+            searchInterface.classList.add('hidden');
+            analysisInterface.classList.remove('hidden');
+            navSearchTab.classList.remove('active');
+            navAnalysisTab.classList.add('active');
+        }
+
+        navSearchTab.addEventListener('click', (e) => { e.preventDefault(); showSearchView(); });
+        navAnalysisTab.addEventListener('click', (e) => { e.preventDefault(); showAnalysisView(); });
+        backToSearchBtn.addEventListener('click', showSearchView);
+
+        // Source radio change -> update placeholder
+        document.getElementsByName('source').forEach(r => r.addEventListener('change', () => {
+            currentSource = getSelectedSource();
+            carIdInput.placeholder = currentSource === 'dongchedi' ? '例如: 4936 (懂车帝车型ID)' : '例如: 8171';
+        }));
+
+        // 渲染搜索预览结果
+        function renderSearchPreview(data) {
+            const isDongchedi = currentSource === 'dongchedi';
+            const sourceLabel = isDongchedi ? '懂车帝' : '汽车之家';
+            const totalDisplay = (data.total_reviews && data.total_reviews !== 0) ? data.total_reviews : '未知';
+            const inSaleCard = (!isDongchedi && data.in_sale_reviews > 0) ? `
+                        <div class="stat-card">
+                            <div class="stat-label"><i class="fas fa-store"></i> 在售口碑</div>
+                            <div class="stat-number">${data.in_sale_reviews}</div>
+                            <div class="stat-detail">当前在售车型口碑</div>
+                        </div>` : '';
+
+            // 缓存状态
+            const hasCache = data.cached && data.cached.csv_filename;
+            const cacheCard = hasCache ? `
+                        <div class="stat-card" style="border: 2px solid #059669;">
+                            <div class="stat-label"><i class="fas fa-database"></i> 本地缓存</div>
+                            <div class="stat-number" style="font-size:1.5rem;">${data.cached.review_count} 条</div>
+                            <div class="stat-detail">爬取于 ${data.cached.scraped_at}</div>
+                        </div>` : '';
+            const actionButtons = hasCache ? `
+                        <button class="btn btn-success" id="useCacheBtn"><i class="fas fa-bolt"></i> 直接分析 (使用缓存)</button>
+                        <button class="btn" id="reScrapeBtn"><i class="fas fa-redo"></i> 重新爬取</button>
+                        <button class="btn btn-primary" id="gotoAnalysisBtn" disabled><i class="fas fa-chart-simple"></i> 前往智能分析</button>` : `
+                        <button class="btn btn-success" id="downloadDataBtn"><i class="fas fa-download"></i> 开始爬取全部口碑</button>
+                        <button class="btn btn-primary" id="gotoAnalysisBtn" disabled><i class="fas fa-chart-simple"></i> 前往智能分析 (需先爬取)</button>`;
+
+            const html = `
+                <div style="animation: fadeIn 0.3s;">
+                    <div class="info-message" style="background: #e6f0ff; border-left-color: #2563eb;">
+                        <i class="fas fa-check-circle" style="font-size: 1.8rem; color: #059669;"></i>
+                        <div>
+                            <strong>检索成功 (${sourceLabel})</strong><br>
+                            车型：${data.car_name} (ID: ${data.car_id})。总口碑 ${totalDisplay} 条${isDongchedi ? '' : '，在售口碑 ' + data.in_sale_reviews + ' 条'}。
+                        </div>
+                    </div>
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="stat-label"><i class="fas fa-comment-dots"></i> 总口碑数</div>
+                            <div class="stat-number">${totalDisplay}</div>
+                            <div class="stat-detail">条车主真实口碑</div>
+                        </div>${inSaleCard}${cacheCard}
+                    </div>
+                    <div class="action-bar">${actionButtons}
+                        <button class="btn" id="refreshSearchBtn"><i class="fas fa-rotate"></i> 重新搜索</button>
+                    </div>
+                    <div id="scrapeProgressArea"></div>
+                </div>
+            `;
+            resultArea.innerHTML = html;
+
+            // 事件绑定
+            document.getElementById('refreshSearchBtn').addEventListener('click', () => {
+                scrapedFile = null;
+                analysisFile = null;
+                analysisCompleted = false;
+                performSearch();
+            });
+
+            if (hasCache) {
+                // 有缓存：直接分析按钮
+                document.getElementById('useCacheBtn').addEventListener('click', () => {
+                    scrapedFile = data.cached.csv_filename;
+                    analysisCarName.textContent = data.car_name;
+                    reviewCountUsed.textContent = data.cached.review_count;
+                    document.getElementById('gotoAnalysisBtn').disabled = false;
+                    document.getElementById('gotoAnalysisBtn').innerHTML = '<i class="fas fa-chart-simple"></i> 前往智能分析 (缓存数据)';
+                    showToast('✅ 已加载缓存数据，可直接分析', 2000);
+                });
+                document.getElementById('reScrapeBtn').addEventListener('click', () => startScrape());
+                document.getElementById('gotoAnalysisBtn').addEventListener('click', () => {
+                    if (!scrapedFile) {
+                        showToast('请先点击"直接分析"加载缓存，或"重新爬取"获取新数据', 2000);
+                        return;
+                    }
+                    startAnalysis();
+                });
+            } else {
+                document.getElementById('downloadDataBtn').addEventListener('click', () => startScrape());
+                document.getElementById('gotoAnalysisBtn').addEventListener('click', () => {
+                    if (!scrapedFile) {
+                        showToast('请先完成口碑爬取', 1500);
+                        return;
+                    }
+                    startAnalysis();
+                });
+            }
+        }
+
+        function updateScrapeProgress(percent, message) {
+            let progArea = document.getElementById('scrapeProgressArea');
+            if (!progArea) return;
+            progArea.innerHTML = `
+                <div style="margin-top: 10px; padding: 10px 0;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="font-weight: 500; color: #1e293b;">${message}</span>
+                        <span style="color: #2563eb; font-weight: 600;">${percent}%</span>
+                    </div>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar-fill" style="width: ${percent}%;"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function pollTask(taskId, type) {
+            return new Promise((resolve, reject) => {
+                const interval = setInterval(async () => {
+                    try {
+                        const resp = await fetch(`/api/task/${taskId}`);
+                        const task = await resp.json();
+                        if (task.status === 'completed') {
+                            clearInterval(interval);
+                            resolve(task);
+                        } else if (task.status === 'failed') {
+                            clearInterval(interval);
+                            reject(new Error(task.message || '任务失败'));
+                        } else {
+                            if (type === 'scrape') {
+                                updateScrapeProgress(task.progress || 0, task.message || '爬取中...');
+                            } else if (type === 'analyze') {
+                                updateAnalyzeProgress(task.progress || 0, task.message || '分析中...');
+                            }
+                        }
+                    } catch (e) {
+                        clearInterval(interval);
+                        reject(e);
+                    }
+                }, 1000);
+            });
+        }
+
+        function updateAnalyzeProgress(percent, message) {
+            let progArea = document.getElementById('analysisProgressArea');
+            if (!progArea) return;
+            progArea.innerHTML = `
+                <div style="margin-top: 10px; padding: 10px 0;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="font-weight: 500; color: #1e293b;">${message}</span>
+                        <span style="color: #2563eb; font-weight: 600;">${percent}%</span>
+                    </div>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar-fill" style="width: ${percent}%;"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function startScrape() {
+            if (!searchResultData) return;
+            const btn = document.getElementById('downloadDataBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loader"></div> 准备中...';
+
+            try {
+                const resp = await fetch(api('scrape'), {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        car_id: searchResultData.car_id,
+                        car_name: searchResultData.car_name
+                    })
+                });
+                const { task_id } = await resp.json();
+                btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> 正在爬取...';
+                const result = await pollTask(task_id, 'scrape');
+                scrapedFile = result.file;
+                updateScrapeProgress(100, '爬取完成！');
+                showToast('✅ 口碑数据爬取完成！', 2500);
+                
+                document.getElementById('gotoAnalysisBtn').disabled = false;
+                document.getElementById('gotoAnalysisBtn').innerHTML = '<i class="fas fa-chart-simple"></i> 前往智能分析';
+                
+                analysisCarName.textContent = searchResultData.car_name;
+                reviewCountUsed.textContent = searchResultData.total_reviews;
+                
+                downloadRawDataBtn.style.display = 'inline-flex';
+                downloadRawDataBtn.onclick = () => window.open(`/outputs/${encodeURI(scrapedFile)}`, '_blank');
+            } catch (e) {
+                showToast('爬取失败: ' + e.message, 3000);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-download"></i> 开始爬取全部口碑';
+            }
+        }
+
+        async function startAnalysis() {
+            if (!scrapedFile) return;
+            let progArea = document.getElementById('scrapeProgressArea');
+            if (progArea) {
+                progArea.innerHTML = `<div id="analysisProgressArea"></div>`;
+            }
+            const gotoBtn = document.getElementById('gotoAnalysisBtn');
+            gotoBtn.disabled = true;
+            gotoBtn.innerHTML = '<div class="loader"></div> 分析中...';
+
+            try {
+                const resp = await fetch(api('analyze'), {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ file: scrapedFile })
+                });
+                const { task_id } = await resp.json();
+                const result = await pollTask(task_id, 'analyze');
+                analysisFile = result.file;
+                analysisCompleted = true;
+                updateAnalyzeProgress(100, '分析完成！');
+                showToast('✅ 智能分析完成！', 2500);
+                gotoBtn.disabled = false;
+                gotoBtn.innerHTML = '<i class="fas fa-chart-simple"></i> 前往智能分析';
+
+                if (result.summary) {
+                    const summary = result.summary;
+                    summaryScore.textContent = summary.total_score ?? '--';
+                    summarySatis.textContent = summary.satisfactions_top || '--';
+                    summaryDiss.textContent = summary.dissatisfactions_top || '--';
+                    aiSummaryText.textContent = summary.summary_text || '暂无摘要';
+                }
+                exportReportBtn.disabled = false;
+                exportReportBtn.onclick = () => window.open(`/outputs/${encodeURI(analysisFile)}`, '_blank');
+                visualizeReportBtn.disabled = false;
+                visualizeReportBtn.onclick = generateVisualReport;
+
+                showAnalysisView();
+            } catch (e) {
+                showToast('分析失败: ' + e.message, 3000);
+            } finally {
+                gotoBtn.disabled = false;
+                gotoBtn.innerHTML = '<i class="fas fa-chart-simple"></i> 前往智能分析';
+            }
+        }
+
+        async function generateVisualReport() {
+            if (!analysisFile) return;
+            visualizeReportBtn.disabled = true;
+            visualizeReportBtn.innerHTML = '<div class="loader"></div> 生成中...';
+            const area = document.getElementById('visualizationArea');
+            area.classList.remove('hidden');
+            try {
+                const resp = await fetch(api('visualize'), {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ file: analysisFile })
+                });
+                const data = await resp.json();
+                if (data.error) {
+                    showToast(data.error, 3000);
+                    return;
+                }
+                // 深层洞察
+                renderRadarChart('scoreRadarChart', data.score_radar);
+                renderDomainMatrix('domainMatrixChart', data.domain_matrix);
+                renderImprovementPriority('improvementPriorityChart', data.improvement_priority);
+                renderCompetitiveInsight('competitiveInsightDiv', data.competitive_insight);
+                renderTopPoints('topPraiseChart', data.top_praise_points, false);
+                renderTopPoints('topComplaintChart', data.top_complaint_points, true);
+                renderScenarioConcern('scenarioConcernDiv', data.scenario_concern);
+                // 基础饼图
+                renderPieChart('scenesChart', data.scenes);
+                renderPieChart('satisChart', data.satisfactions);
+                renderPieChart('disChart', data.dissatisfactions);
+                renderPieChart('suggestChart', data.suggestions);
+                renderPieChart('compareChart', data.comparisons);
+                showToast('📊 可视化报告已生成', 2000);
+            } catch (e) {
+                showToast('可视化生成失败: ' + e.message, 3000);
+            } finally {
+                visualizeReportBtn.disabled = false;
+                visualizeReportBtn.innerHTML = '<i class="fas fa-chart-bar"></i> 生成可视化报告';
+            }
+        }
+
+        function renderPieChart(domId, data) {
+            const dom = document.getElementById(domId);
+            if (!dom || !data || !data.length) return;
+            const myChart = echarts.init(dom);
+            myChart.setOption({
+                tooltip: { trigger: 'item' },
+                series: [{
+                    type: 'pie',
+                    radius: data.length > 10 ? ['20%', '65%'] : '65%',
+                    data: data,
+                    label: { formatter: '{b}: {c}' }
+                }]
+            });
+            window.addEventListener('resize', () => myChart.resize());
+        }
+
+        function renderRadarChart(domId, data) {
+            const dom = document.getElementById(domId);
+            if (!dom || !data || !data.length) return;
+            const myChart = echarts.init(dom);
+            myChart.setOption({
+                tooltip: {},
+                radar: {
+                    indicator: data.map(d => ({ name: d.name, max: 5.0 })),
+                    shape: 'polygon',
+                    splitArea: { areaStyle: { color: ['#f0f5ff', '#e8f0fe'] } }
+                },
+                series: [{
+                    type: 'radar',
+                    data: [{ value: data.map(d => d.value), name: '综合评分', areaStyle: { color: 'rgba(37,99,235,0.2)' } }],
+                    symbol: 'circle', symbolSize: 6,
+                    lineStyle: { color: '#2563eb', width: 2 }
+                }]
+            });
+            window.addEventListener('resize', () => myChart.resize());
+        }
+
+        function renderDomainMatrix(domId, data) {
+            const dom = document.getElementById(domId);
+            if (!dom || !data || !data.length) return;
+            const myChart = echarts.init(dom);
+            const domains = data.map(d => d.domain);
+            const satis = data.map(d => d.satis_count);
+            const diss = data.map(d => -d.diss_count);
+            const colors = data.map(d => {
+                const n = d.net_score;
+                if (n >= 3) return '#059669';
+                if (n >= 0) return '#3b82f6';
+                if (n >= -3) return '#f59e0b';
+                return '#ef4444';
+            });
+            myChart.setOption({
+                tooltip: { trigger: 'axis', formatter: p => {
+                    const i = p[0].dataIndex;
+                    return `<b>${domains[i]}</b><br/>满意: ${satis[i]} | 不满意: ${diss[i]}`;
+                }},
+                grid: { left: 100, right: 30, top: 10, bottom: 20 },
+                xAxis: { type: 'value', axisLabel: { formatter: v => Math.abs(v) } },
+                yAxis: { type: 'category', data: domains.reverse(), axisLabel: { fontSize: 11 } },
+                series: [{
+                    type: 'bar', stack: 'total',
+                    data: satis.reverse().map((v, i) => ({ value: v, itemStyle: { color: colors.reverse()[i] } })),
+                    barWidth: 16
+                }, {
+                    type: 'bar', stack: 'total',
+                    data: diss.reverse().map(v => ({ value: v, itemStyle: { color: '#fecaca' } })),
+                    barWidth: 16
+                }]
+            });
+            window.addEventListener('resize', () => myChart.resize());
+        }
+
+        function renderImprovementPriority(domId, data) {
+            const dom = document.getElementById(domId);
+            if (!dom || !data || !data.length) { dom.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:40px;">暂无改进建议数据</p>'; return; }
+            const myChart = echarts.init(dom);
+            myChart.setOption({
+                tooltip: { trigger: 'axis', formatter: p => {
+                    const d = data[p[0].dataIndex];
+                    return `<b>${d.domain}</b> 优先级:${d.priority_score}<br/>抱怨(${d.diss_count}): ${(d.top_complaints||[]).join(' / ')}`;
+                }},
+                grid: { left: 90, right: 60, top: 10, bottom: 20 },
+                xAxis: { type: 'value', name: '优先级分' },
+                yAxis: { type: 'category', data: data.map(d => d.domain).reverse(), axisLabel: { fontSize: 12 } },
+                series: [{
+                    type: 'bar',
+                    data: data.map(d => ({
+                        value: d.priority_score,
+                        itemStyle: { color: d.priority_score > 20 ? '#ef4444' : d.priority_score > 10 ? '#f59e0b' : '#3b82f6' }
+                    })).reverse(),
+                    barWidth: 20,
+                    label: { show: true, position: 'right', formatter: p => `抱怨${data[data.length-1-p.dataIndex].diss_count} 建议${data[data.length-1-p.dataIndex].suggest_count}` }
+                }]
+            });
+            window.addEventListener('resize', () => myChart.resize());
+        }
+
+        function renderCompetitiveInsight(domId, data) {
+            const dom = document.getElementById(domId);
+            if (!dom) return;
+            const rivals = data.rival_detail || [];
+            if (!rivals.length) { dom.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:40px;">暂无竞品对比数据</p>'; return; }
+            let html = '<div style="font-size:0.9rem;">';
+            // 优劣势汇总
+            if ((data.our_edges||[]).length) {
+                html += '<div style="margin-bottom:12px;"><b style="color:#059669;">我方优势领域：</b>';
+                html += data.our_edges.map(e => `<span style="background:#dcfce7;padding:2px 8px;border-radius:12px;margin:2px;display:inline-block;">${e.domain}(${e.count})</span>`).join('');
+                html += '</div>';
+            }
+            if ((data.rival_edges||[]).length) {
+                html += '<div style="margin-bottom:12px;"><b style="color:#ef4444;">竞品优势领域：</b>';
+                html += data.rival_edges.map(e => `<span style="background:#fee2e2;padding:2px 8px;border-radius:12px;margin:2px;display:inline-block;">${e.domain}(${e.count})</span>`).join('');
+                html += '</div>';
+            }
+            // 各竞品详情
+            html += '<table style="width:100%;font-size:0.85rem;border-collapse:collapse;">';
+            html += '<tr style="background:#f1f5f9;"><th style="padding:6px;text-align:left;">竞品</th><th>提及</th><th>我方优势</th><th>竞品优势</th></tr>';
+            rivals.forEach(r => {
+                html += `<tr style="border-bottom:1px solid #e2e8f0;">
+                    <td style="padding:6px;font-weight:500;">${r.rival}</td>
+                    <td style="text-align:center;">${r.mention_count}</td>
+                    <td style="text-align:center;color:#059669;">${r.our_advantage_count || '-'}</td>
+                    <td style="text-align:center;color:#ef4444;">${r.rival_advantage_count || '-'}</td>
+                </tr>`;
+            });
+            html += '</table></div>';
+            dom.innerHTML = html;
+        }
+
+        function renderTopPoints(domId, data, isComplaint) {
+            const dom = document.getElementById(domId);
+            if (!dom || !data || !data.length) { dom.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:40px;">暂无数据</p>'; return; }
+            const myChart = echarts.init(dom);
+            const color = isComplaint ? '#ef4444' : '#059669';
+            myChart.setOption({
+                tooltip: { trigger: 'axis' },
+                grid: { left: 5, right: 30, top: 5, bottom: 5, containLabel: true },
+                xAxis: { type: 'value', show: false },
+                yAxis: { type: 'category', data: data.map(d => d.text).reverse(), axisLabel: { fontSize: 10, width: 120, overflow: 'truncate' } },
+                series: [{
+                    type: 'bar',
+                    data: data.map(d => ({ value: d.count, itemStyle: { color: color, borderRadius: [0, 4, 4, 0] } })).reverse(),
+                    barWidth: 14,
+                    label: { show: true, position: 'right', fontSize: 10, formatter: '{c}' }
+                }]
+            });
+            window.addEventListener('resize', () => myChart.resize());
+        }
+
+        function renderScenarioConcern(domId, data) {
+            const dom = document.getElementById(domId);
+            if (!dom || !data || !data.length) { dom.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:40px;">暂无场景关联数据</p>'; return; }
+            let html = '';
+            data.forEach(item => {
+                const satisTags = (item.top_satis||[]).map(d => `<span style="background:#dcfce7;color:#166534;padding:1px 8px;border-radius:10px;margin:1px;display:inline-block;font-size:0.8rem;">👍${d.domain}(${d.count})</span>`).join('');
+                const dissTags = (item.top_diss||[]).map(d => `<span style="background:#fee2e2;color:#991b1b;padding:1px 8px;border-radius:10px;margin:1px;display:inline-block;font-size:0.8rem;">👎${d.domain}(${d.count})</span>`).join('');
+                html += `<div style="margin-bottom:12px;padding:10px;background:#f8fafc;border-radius:12px;">
+                    <div style="font-weight:600;margin-bottom:6px;">🚗 ${item.scenario}</div>
+                    <div style="margin-bottom:4px;">${satisTags || '<span style="color:#94a3b8;font-size:0.8rem;">-</span>'}</div>
+                    <div>${dissTags || '<span style="color:#94a3b8;font-size:0.8rem;">-</span>'}</div>
+                </div>`;
+            });
+            dom.innerHTML = html;
+        }
+
+        async function performSearch() {
+            const carId = carIdInput.value.trim();
+            const source = getSelectedSource();
+            currentSource = source;
+            if (!carId) { showToast('请输入车型ID', 1500); return; }
+
+            const sourceLabel = source === 'dongchedi' ? '懂车帝' : '汽车之家';
+            resultArea.innerHTML = `
+                <div class="info-message">
+                    <div class="loader"></div>
+                    <div><strong>正在${sourceLabel}检索车型ID ${carId} 的口碑数据……</strong><br>请稍候</div>
+                </div>
+            `;
+            scrapedFile = null;
+            analysisFile = null;
+            analysisCompleted = false;
+
+            try {
+                const resp = await fetch(api('search'), {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ car_id: carId })
+                });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.error || '未找到车型');
+                }
+                const data = await resp.json();
+                searchResultData = data;
+                renderSearchPreview(data);
+            } catch (e) {
+                resultArea.innerHTML = `
+                    <div class="info-message" style="background: #fee2e2; border-left-color: #ef4444; color: #991b1b;">
+                        <i class="fas fa-exclamation-circle" style="font-size: 1.8rem;"></i>
+                        <div><strong>搜索失败</strong><br>${e.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        searchBtn.addEventListener('click', performSearch);
+        carIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
+    })();
+</script>
+</body>
+</html>
